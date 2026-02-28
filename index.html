@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Lector UMBRAL - PWA</title>
+    
+    <!-- Configuración PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lector UMBRAL">
+    <link rel="apple-touch-icon" href="assets/icons/icon-152x152.png">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* TU MISMO ESTILO ORIGINAL - Lo mantengo igual */
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1f2c;color:#e2e8f0;min-height:100vh;padding:20px 20px 40px;position:relative;overflow-x:hidden}
+        body::before{content:'';position:fixed;top:0;left:0;right:0;height:200px;background:linear-gradient(180deg,#2a2e3a 0%,transparent 100%);pointer-events:none;z-index:0}
+        .container{max-width:800px;margin:0 auto;position:relative;z-index:1}
+        header{text-align:center;margin-bottom:30px;padding-top:10px}
+        h1{font-size:2.2rem;margin-bottom:10px;background:linear-gradient(135deg,#63b3ed 0%,#a0aec0 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;letter-spacing:1px;text-shadow:0 0 30px rgba(99,179,237,0.3)}
+        .subtitle{font-size:0.95rem;color:#a0aec0;margin-bottom:5px;font-weight:300}
+        .brand-line{display:inline-block;padding:6px 16px;background:rgba(213,158,46,0.15);border:1px solid rgba(213,158,46,0.3);border-radius:20px;font-size:0.85rem;color:#d69e2e;font-weight:500;margin-top:8px}
+        .card{background:linear-gradient(135deg,#2d3748 0%,#2a2e3a 100%);backdrop-filter:blur(10px);border-radius:20px;padding:25px;margin-bottom:20px;box-shadow:0 10px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(99,179,237,0.1);border:1px solid rgba(74,85,104,0.3);position:relative;overflow:hidden}
+        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#63b3ed 20%,#d69e2e 50%,#e53e3e 80%,transparent 100%);opacity:0.4}
+        textarea{width:100%;height:280px;background:#1a1f2c;border:2px solid #4a5568;border-radius:15px;color:#e2e8f0;font-size:17px;padding:18px;resize:none;font-family:inherit;line-height:1.6;transition:all 0.3s;box-shadow:inset 0 2px 8px rgba(0,0,0,0.3);margin-bottom:10px}
+        textarea:focus{outline:none;border-color:#63b3ed;box-shadow:inset 0 2px 8px rgba(0,0,0,0.3),0 0 0 3px rgba(99,179,237,0.2)}
+        textarea::placeholder{color:#4a5568;font-style:italic}
+        .char-counter{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:14px;padding:8px 12px;background:rgba(26,31,44,0.5);border-radius:8px;border-left:3px solid #4a5568}
+        .char-info{color:#a0aec0;font-weight:500}
+        .char-limit{font-weight:700;color:#63b3ed}
+        .char-limit.warning{color:#d69e2e;animation:pulse 1s infinite}
+        .char-limit.error{color:#e53e3e}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        .button-row{display:flex;flex-direction:column;gap:12px;margin-bottom:25px}
+        .button-group{display:flex;gap:12px}
+        .quick-btn{flex:1;padding:18px 10px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s;font-family:inherit;box-shadow:0 6px 20px rgba(0,0,0,0.4);min-height:60px;text-transform:uppercase;letter-spacing:0.5px}
+        .quick-btn:active{transform:translateY(3px);box-shadow:0 2px 10px rgba(0,0,0,0.3)}
+        .quick-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
+        .btn-play{background:linear-gradient(135deg,#63b3ed 0%,#4299e1 100%);color:#1a1f2c;border:1px solid rgba(99,179,237,0.5)}
+        .btn-pause{background:linear-gradient(135deg,#d69e2e 0%,#b7791f 100%);color:#1a1f2c;border:1px solid rgba(214,158,46,0.5)}
+        .btn-stop{background:linear-gradient(135deg,#e53e3e 0%,#c53030 100%);color:#e2e8f0;border:1px solid rgba(229,62,62,0.5)}
+        .btn-clear{background:linear-gradient(135deg,#4a5568 0%,#2d3748 100%);color:#e2e8f0;border:1px solid rgba(74,85,104,0.5)}
+        .controls-panel{background:rgba(26,31,44,0.6);padding:22px;border-radius:15px;border:1px solid rgba(74,85,104,0.3);box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);margin-bottom:20px}
+        h2{font-size:1.2rem;margin-bottom:18px;color:#63b3ed;display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:0.5px}
+        h2 i{color:#d69e2e}
+        .voice-selector,.speed-selector{margin-bottom:20px}
+        .voice-selector label,.speed-selector label{display:block;margin-bottom:10px;font-weight:500;color:#a0aec0;font-size:0.95rem}
+        select{width:100%;padding:16px;background:#1a1f2c;border:2px solid #4a5568;border-radius:10px;color:#e2e8f0;font-size:15px;font-family:inherit;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2363b3ed'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 15px center;background-size:20px;transition:all 0.3s;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3)}
+        select:focus{outline:none;border-color:#63b3ed;box-shadow:inset 0 2px 6px rgba(0,0,0,0.3),0 0 0 3px rgba(99,179,237,0.2)}
+        .speed-options{display:flex;gap:10px}
+        .speed-option{flex:1}
+        .speed-option input{display:none}
+        .speed-option label{display:block;padding:14px 10px;background:#1a1f2c;border:2px solid #4a5568;border-radius:10px;cursor:pointer;transition:all 0.3s;font-weight:600;text-align:center;color:#a0aec0;font-size:0.9rem}
+        .speed-option input:checked+label{background:linear-gradient(135deg,rgba(99,179,237,0.3),rgba(214,158,46,0.2));border-color:#63b3ed;color:#e2e8f0;box-shadow:0 0 15px rgba(99,179,237,0.3)}
+        .status{text-align:center;padding:16px;background:rgba(26,31,44,0.8);border-radius:12px;font-size:15px;border-left:4px solid #4a5568;color:#a0aec0;font-weight:500;transition:all 0.3s}
+        .status.active{color:#63b3ed;border-left-color:#d69e2e;background:rgba(214,158,46,0.1);box-shadow:0 0 20px rgba(214,158,46,0.2);animation:statusPulse 2s infinite}
+        .status.paused{color:#d69e2e;border-left-color:#d69e2e;background:rgba(214,158,46,0.15)}
+        @keyframes statusPulse{0%,100%{opacity:1}50%{opacity:0.8}}
+        .instructions{font-size:13px;margin-top:25px;text-align:center;line-height:1.7;padding:18px;color:#a0aec0;background:rgba(45,55,72,0.4);border-radius:12px;border:1px solid rgba(74,85,104,0.3)}
+        .instructions p{margin-bottom:8px}
+        .instructions strong{color:#63b3ed}
+        @media (max-width:768px){
+        body{padding:15px 15px 30px}
+        h1{font-size:1.8rem}
+        .card{padding:20px}
+        textarea{height:240px;font-size:16px;padding:15px}
+        .quick-btn{padding:16px 8px;font-size:15px;min-height:55px}
+        .button-group,.button-row{gap:10px}
+        .controls-panel{padding:18px}}
+    </style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1><i class="fas fa-book-dead"></i> LECTOR UMBRAL</h1>
+<div class="subtitle">Sistema de Narración Inteligente</div>
+<div class="brand-line">Terror Inteligente • Máx. 8,000 caracteres</div>
+</header>
+<main>
+<div class="card">
+<h2><i class="fas fa-file-alt"></i> Texto para Narrar</h2>
+<textarea id="textInput" placeholder="Pega aquí el contenido que deseas escuchar... La oscuridad aguarda tus palabras."></textarea>
+<div class="char-counter">
+<div class="char-info">📋 Contenido cargado</div>
+<div class="char-limit" id="charLimit">0 / 8,000</div>
+</div>
+<div class="button-row">
+<div class="button-group">
+<button id="playBtn" class="quick-btn btn-play"><i class="fas fa-play"></i> PLAY</button>
+<button id="pauseBtn" class="quick-btn btn-pause" disabled><i class="fas fa-pause"></i> PAUSA</button>
+</div>
+<div class="button-group">
+<button id="stopBtn" class="quick-btn btn-stop" disabled><i class="fas fa-stop"></i> STOP</button>
+<button id="clearBtn" class="quick-btn btn-clear"><i class="fas fa-eraser"></i> BORRAR</button>
+</div>
+</div>
+<div class="controls-panel">
+<h2><i class="fas fa-sliders-h"></i> Configuración de Voz</h2>
+<div class="voice-selector">
+<label for="voiceSelect"><i class="fas fa-microphone-alt"></i> Voz del Narrador:</label>
+<select id="voiceSelect"><option value="">Inicializando voces...</option></select>
+</div>
+<div class="speed-selector">
+<label><i class="fas fa-tachometer-alt"></i> Velocidad de Narración:</label>
+<div class="speed-options">
+<div class="speed-option"><input type="radio" id="speed-slow" name="speed" value="0.7"><label for="speed-slow">Lento</label></div>
+<div class="speed-option"><input type="radio" id="speed-normal" name="speed" value="1" checked><label for="speed-normal">Normal</label></div>
+<div class="speed-option"><input type="radio" id="speed-fast" name="speed" value="1.5"><label for="speed-fast">Rápido</label></div>
+</div>
+</div>
+</div>
+<div class="status" id="status">🎭 Sistema listo • Aguardando contenido</div>
+</div>
+<div class="instructions">
+<p><i class="fas fa-shield-virus"></i> <strong>Privacidad Total:</strong> Todo el procesamiento ocurre en tu dispositivo.</p>
+<p><i class="fas fa-lightbulb"></i> <strong>Uso:</strong> Copia texto → Pega aquí → PLAY → Escucha</p>
+<p><i class="fas fa-keyboard"></i> <strong>Atajo:</strong> Ctrl/Cmd + Enter para reproducir</p>
+</div>
+</main>
+</div>
+
+<!-- Audio silencioso para keep-alive -->
+<audio id="silentAudio" loop style="display: none;"></audio>
+
+<script>
+// ===== ELEMENTOS =====
+const textInput = document.getElementById('textInput');
+const voiceSelect = document.getElementById('voiceSelect');
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const stopBtn = document.getElementById('stopBtn');
+const clearBtn = document.getElementById('clearBtn');
+const statusEl = document.getElementById('status');
+const charLimit = document.getElementById('charLimit');
+const silentAudio = document.getElementById('silentAudio');
+
+// ===== CONSTANTES =====
+const MAX_CHARS = 8000;
+const WARN_CHARS = 7000;
+
+// ===== VARIABLES DE ESTADO =====
+let isPlaying = false;
+let isPaused = false;
+let shouldStop = false; // <-- CLAVE: Bandera para controlar STOP
+let currentChunkIndex = 0;
+let textChunks = [];
+let audioUnlocked = false;
+let keepAliveInterval = null;
+
+// ===== VOCES PRIORITARIAS =====
+const PRIORITY_VOICES = [
+    { keywords: ['paulina', 'premium', 'enhanced'], name: 'Paulina Premium', lang: 'es-MX' },
+    { keywords: ['mónica', 'monica', 'premium'], name: 'Mónica Premium', lang: 'es-ES' },
+    { keywords: ['paulina'], name: 'Paulina', lang: 'es-MX' },
+    { keywords: ['mónica', 'monica'], name: 'Mónica', lang: 'es-ES' }
+];
+
+// ===== INICIALIZACIÓN PARA iOS =====
+function initAudioForiOS() {
+    // Crear contexto de audio
+    if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContextClass();
+            
+            const buffer = audioContext.createBuffer(1, 1, 22050);
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+        } catch (e) {}
+    }
+    
+    // Desbloquear con primer toque
+    document.body.addEventListener('touchstart', unlockAudio, { once: true });
+    document.body.addEventListener('click', unlockAudio, { once: true });
+}
+
+function unlockAudio() {
+    if (audioUnlocked) return;
+    
+    // Utterance vacía para desbloquear
+    const emptyUtterance = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(emptyUtterance);
+    
+    // Audio silencioso para keep-alive
+    silentAudio.volume = 0.01;
+    silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gR2VuZXJpYyBTaWxlbmNlIEF1ZGlvIENvZGVjAFBFAFAAAAMwAABJZHNkZAAAAAAAAAAAAAAAAAAA';
+    
+    audioUnlocked = true;
+}
+
+// ===== CARGA DE VOCES =====
+function loadVoices() {
+    const synth = window.speechSynthesis;
+    const allVoices = synth.getVoices();
+    
+    voiceSelect.innerHTML = '';
+    
+    let foundVoices = [];
+    
+    // Buscar voces prioritarias
+    PRIORITY_VOICES.forEach(priority => {
+        const matches = allVoices.filter(voice => 
+            priority.keywords.some(keyword => 
+                voice.name.toLowerCase().includes(keyword)
+            ) && voice.lang.toLowerCase().startsWith(priority.lang.toLowerCase().split('-')[0])
+        );
+        
+        matches.forEach((voice, index) => {
+            const isPremium = voice.name.toLowerCase().includes('premium') || 
+                            voice.name.toLowerCase().includes('enhanced');
+            foundVoices.push({
+                voice: voice,
+                displayName: matches.length > 1 ? `${priority.name} ${index + 1}` : priority.name,
+                priority: isPremium ? 1 : 2
+            });
+        });
+    });
+    
+    foundVoices.sort((a, b) => a.priority - b.priority);
+    
+    if (foundVoices.length === 0) {
+        const spanishVoices = allVoices.filter(v => v.lang.startsWith('es'));
+        spanishVoices.forEach(voice => {
+            foundVoices.push({
+                voice: voice,
+                displayName: `${voice.name} (${voice.lang})`,
+                priority: 3
+            });
+        });
+    }
+    
+    foundVoices.forEach((item, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = item.displayName;
+        option.dataset.voiceName = item.voice.name;
+        option.dataset.voiceLang = item.voice.lang;
+        if (index === 0) option.selected = true;
+        voiceSelect.appendChild(option);
+    });
+    
+    if (foundVoices.length === 0) {
+        voiceSelect.innerHTML = '<option>No hay voces en español</option>';
+    }
+}
+
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+setTimeout(loadVoices, 300);
+
+// ===== CONTADOR =====
+function updateCharCounter() {
+    const length = textInput.value.length;
+    charLimit.textContent = `${length.toLocaleString()} / 8,000`;
+    charLimit.classList.remove('warning', 'error');
+    
+    if (length > WARN_CHARS && length <= MAX_CHARS) {
+        charLimit.classList.add('warning');
+    } else if (length > MAX_CHARS) {
+        charLimit.classList.add('error');
+        textInput.value = textInput.value.substring(0, MAX_CHARS);
+        updateCharCounter();
+    }
+    
+    updateButtons();
+}
+
+textInput.addEventListener('input', updateCharCounter);
+
+// ===== DIVIDIR TEXTO =====
+function splitTextIntoChunks(text) {
+    const chunks = [];
+    const maxChunkLength = 600;
+    
+    for (let i = 0; i < text.length; i += maxChunkLength) {
+        let end = Math.min(i + maxChunkLength, text.length);
+        
+        if (end < text.length) {
+            const lastPeriod = text.lastIndexOf('.', end);
+            const lastNewLine = text.lastIndexOf('\n', end);
+            const cutPoint = Math.max(lastPeriod, lastNewLine);
+            if (cutPoint > i) end = cutPoint + 1;
+        }
+        
+        chunks.push(text.substring(i, end));
+    }
+    
+    return chunks;
+}
+
+// ===== OBTENER VOZ =====
+function getSelectedVoice() {
+    const selectedOption = voiceSelect.options[voiceSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.dataset.voiceName) return null;
+    
+    const allVoices = window.speechSynthesis.getVoices();
+    return allVoices.find(v => v.name === selectedOption.dataset.voiceName);
+}
+
+// ===== FUNCIÓN PRINCIPAL DE REPRODUCCIÓN =====
+function play() {
+    const text = textInput.value.trim();
+    if (!text) {
+        updateStatus("📝 Pega contenido primero");
+        textInput.focus();
+        return;
+    }
+    
+    if (text.length > MAX_CHARS) {
+        updateStatus("❌ Texto demasiado largo");
+        return;
+    }
+    
+    if (!audioUnlocked) {
+        unlockAudio();
+    }
+    
+    // IMPORTANTE: Detener cualquier reproducción anterior
+    forceStop();
+    
+    // Resetear la bandera de STOP
+    shouldStop = false;
+    
+    // Dividir texto
+    textChunks = splitTextIntoChunks(text);
+    currentChunkIndex = 0;
+    
+    // Iniciar keep-alive
+    startKeepAlive();
+    
+    // Iniciar reproducción
+    playNextChunk();
+}
+
+function playNextChunk() {
+    // Verificar si debemos detenernos
+    if (shouldStop) {
+        completeStop();
+        return;
+    }
+    
+    if (isPaused) return;
+    
+    if (currentChunkIndex >= textChunks.length) {
+        // Terminó la reproducción
+        isPlaying = false;
+        updateStatus("✅ Reproducción completada");
+        stopKeepAlive();
+        updateButtons();
+        return;
+    }
+    
+    const chunk = textChunks[currentChunkIndex];
+    const utterance = new SpeechSynthesisUtterance(chunk);
+    
+    const selectedVoice = getSelectedVoice();
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
+    
+    const speed = document.querySelector('input[name="speed"]:checked').value;
+    utterance.rate = parseFloat(speed);
+    
+    utterance.onstart = () => {
+        // Verificar nuevamente si debemos detenernos
+        if (shouldStop) {
+            window.speechSynthesis.cancel();
+            completeStop();
+            return;
+        }
+        
+        isPlaying = true;
+        updateStatus(`🎙️ Fragmento ${currentChunkIndex + 1} de ${textChunks.length}`);
+        statusEl.classList.add('active');
+        updateButtons();
+    };
+    
+    utterance.onend = () => {
+        if (shouldStop) {
+            completeStop();
+            return;
+        }
+        
+        currentChunkIndex++;
+        // Pequeño delay entre fragmentos
+        setTimeout(() => {
+            if (!shouldStop && !isPaused) {
+                playNextChunk();
+            }
+        }, 100);
+    };
+    
+    utterance.onerror = (event) => {
+        console.error('Error:', event);
+        if (shouldStop) {
+            completeStop();
+            return;
+        }
+        
+        currentChunkIndex++;
+        setTimeout(() => {
+            if (!shouldStop && !isPaused) {
+                playNextChunk();
+            }
+        }, 200);
+    };
+    
+    window.speechSynthesis.speak(utterance);
+}
+
+// ===== CONTROLES =====
+function pause() {
+    if (window.speechSynthesis.speaking && !isPaused && !shouldStop) {
+        window.speechSynthesis.pause();
+        isPaused = true;
+        updateStatus("⏸️ Pausado");
+        statusEl.classList.remove('active');
+        statusEl.classList.add('paused');
+        updateButtons();
+    }
+}
+
+function resume() {
+    if (window.speechSynthesis.speaking && isPaused && !shouldStop) {
+        window.speechSynthesis.resume();
+        isPaused = false;
+        updateStatus("▶️ Reanudando...");
+        statusEl.classList.add('active');
+        statusEl.classList.remove('paused');
+        updateButtons();
+        playNextChunk();
+    }
+}
+
+function stop() {
+    // Marcar que debemos detenernos
+    shouldStop = true;
+    
+    // Cancelar cualquier reproducción actual
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+    }
+    
+    // Completar la detención
+    completeStop();
+}
+
+function completeStop() {
+    isPlaying = false;
+    isPaused = false;
+    currentChunkIndex = 0;
+    textChunks = [];
+    
+    stopKeepAlive();
+    silentAudio.pause();
+    
+    updateStatus("⏹️ Detenido");
+    statusEl.classList.remove('active', 'paused');
+    updateButtons();
+}
+
+function forceStop() {
+    shouldStop = true;
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+    }
+    isPlaying = false;
+    isPaused = false;
+    currentChunkIndex = 0;
+    stopKeepAlive();
+}
+
+function clearText() {
+    stop();
+    textInput.value = '';
+    updateCharCounter();
+    updateStatus("🗑️ Borrado • Listo");
+    textInput.focus();
+}
+
+// ===== KEEP-ALIVE PARA SEGUNDO PLANO =====
+function startKeepAlive() {
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    
+    keepAliveInterval = setInterval(() => {
+        if (isPlaying && !isPaused && !shouldStop) {
+            if (document.hidden) {
+                // En segundo plano, mantener el audio vivo
+                try {
+                    silentAudio.play().catch(() => {});
+                    setTimeout(() => silentAudio.pause(), 100);
+                } catch (e) {}
+            }
+        }
+    }, 5000);
+}
+
+function stopKeepAlive() {
+    if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+    }
+}
+
+// ===== ACTUALIZAR BOTONES =====
+function updateButtons() {
+    const hasText = textInput.value.trim().length > 0;
+    const withinLimit = textInput.value.length <= MAX_CHARS;
+    
+    playBtn.disabled = !hasText || !withinLimit || isPlaying;
+    pauseBtn.disabled = !isPlaying || shouldStop;
+    stopBtn.disabled = !isPlaying && !isPaused;
+    
+    if (isPaused) {
+        pauseBtn.innerHTML = '<i class="fas fa-play"></i> REANUDAR';
+        pauseBtn.classList.remove('btn-pause');
+        pauseBtn.classList.add('btn-play');
+    } else {
+        pauseBtn.innerHTML = '<i class="fas fa-pause"></i> PAUSA';
+        pauseBtn.classList.remove('btn-play');
+        pauseBtn.classList.add('btn-pause');
+    }
+}
+
+function updateStatus(message) {
+    statusEl.textContent = `🎭 ${message}`;
+}
+
+// ===== EVENT LISTENERS =====
+playBtn.addEventListener('click', play);
+pauseBtn.addEventListener('click', () => {
+    if (isPlaying) {
+        if (isPaused) resume();
+        else pause();
+    }
+});
+stopBtn.addEventListener('click', stop);
+clearBtn.addEventListener('click', clearText);
+
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!playBtn.disabled) play();
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isPlaying && !isPaused && !shouldStop) {
+        updateStatus("Reproduciendo en segundo plano...");
+    } else if (!document.hidden && isPlaying && !isPaused && !shouldStop) {
+        updateStatus(`🎙️ Fragmento ${currentChunkIndex + 1} de ${textChunks.length}`);
+    }
+});
+
+// ===== INICIALIZACIÓN =====
+function initialize() {
+    updateCharCounter();
+    updateButtons();
+    updateStatus("Sistema listo • Aguardando contenido");
+    textInput.focus();
+    initAudioForiOS();
+}
+
+initialize();
+</script>
+</body>
+</html>
